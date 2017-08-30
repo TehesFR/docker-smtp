@@ -1,11 +1,21 @@
 FROM alpine:3.6
 
-RUN apk --no-cache add postfix rsyslog supervisor bash
-COPY entrypoint postfix /
-COPY supervisor.d /etc/supervisor.d
-RUN chmod 777 /entrypoint && chmod +x /entrypoint
-RUN chmod 777 /postfix && chmod +x /postfix
+RUN apk add --update ca-certificates postfix supervisor rsyslog bash && rm -rf /var/cache/apk/*
 
-EXPOSE 25
+COPY core/supervisord.conf /etc/supervisord.conf
+COPY core/rsyslog.conf /etc/rsyslog.conf
+COPY core/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-CMD ["/entrypoint"]
+ENV HOSTNAME = ""
+ENV RELAY_SMTP_SERVER = ""
+ENV RELAY_SMTP_PORT = ""
+ENV RELAY_SMTP_TLS = false
+ENV RELAY_SMTP_USERNAME = ""
+ENV RELAY_SMTP_PASSWORD = ""
+ENV ALLOWED_NETWORKS = ""
+ENV ALLOWED_SENDER_DOMAINS = ""
+
+EXPOSE 25 587
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]

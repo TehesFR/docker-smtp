@@ -9,8 +9,9 @@ smtp:
   image: tehes/docker-smtp
   #ports:
     #- "25:25"
+    #- "587:587"
   environment:
-    - SMTP_HOSTNAME=smtp.domain.tld
+    - HOSTNAME=smtp.domain.tld
   networks:
     - net
 ```
