@@ -6,6 +6,10 @@ COPY core/supervisord.conf /etc/supervisord.conf
 COPY core/rsyslog.conf /etc/rsyslog.conf
 COPY core/entrypoint.sh /usr/local/bin/entrypoint.sh
 
+RUN chmod +x /etc/supervisord.conf 
+RUN chmod +x /etc/rsyslog.conf
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 ENV HOSTNAME = ""
 ENV RELAY_SMTP_SERVER = ""
 ENV RELAY_SMTP_PORT = ""
