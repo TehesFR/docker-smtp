@@ -1,0 +1,53 @@
+#!/bin/bash
+
+getnetaddr()
+{
+    local networks inet net mask n m
+    networks=$(ip addr show | grep -e "inet[^6]" | awk -F ' ' '{ print $2 }')
+
+    for inet in $networks; do
+        net=$(echo $inet | cut -d '/' -f 1)
+        m=$(echo $inet | cut -d '/' -f 2)
+
+        mask=""
+        m=$((0xffffffff << (32 - $m)))
+        for n in 1 2 3 4; do
+            mask=$((m & 0xff))${mask:+.}$mask
+            m=$((m >> 8))
+        done
+
+        IFS=. read -r i1 i2 i3 i4 <<< $net
+        IFS=. read -r m1 m2 m3 m4 <<< $mask
+
+        printf "%d.%d.%d.%d\n" "$((i1 & m1))" "$((i2 & m2))" "$((i3 & m3))" "$((i4 & m4))"
+    done
+}
+
+if [ ! -f "/etc/postfix/.initialized" ]; then
+    if [ -z "$SMTP_HOSTNAME" ]; then
+        echo "You must provide \$SMTP_HOSTNAME when creating the container"
+        exit 1
+    fi
+
+    echo "Initializing postfix configuration"
+
+    nets=$(getnetaddr)
+
+    echo "Found networks : $(echo $nets | sed 's/\n/ /')"
+
+    printf "\n
+myhostname = $SMTP_HOSTNAME
+myorigin = \$mydomain
+mynetworks_style = subnet
+smtp_tls_security_level = may
+header_checks = regexp:/etc/postfix/header_checks
+" >> /etc/postfix/main.cf
+
+    for n in $nets; do
+        echo "/^Received:.*\[$(echo $n | sed -e 's/\.0/\.\[0-9\]+/g' -e 's/\./\\\./g')\]/    IGNORE" >> /etc/postfix/header_checks
+    done
+
+    touch /etc/postfix/.initialized
+fi
+
+exec /usr/bin/supervisord

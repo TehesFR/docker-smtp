@@ -1,0 +1,12 @@
+#!/bin/sh
+
+trap "{ echo Stopping postfix; postfix -c /etc/postfix stop; exit 0; }" SIGINT SIGTERM
+trap "{ echo Restarting postfix; postfix -c /etc/postfix restart; exit 0; }" SIGHUP
+
+echo Starting postfix
+postfix -c /etc/postfix start
+sleep 3
+
+while kill -0 "$(cat /var/spool/postfix/pid/master.pid | tr -d '[[:space:]]')"; do
+    sleep 5
+done
