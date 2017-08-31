@@ -1,25 +1,17 @@
-FROM alpine:3.6
+FROM debian:jessie
 
-RUN apk add --update ca-certificates postfix supervisor rsyslog bash && rm -rf /var/cache/apk/*
+RUN apt-get update && \
+    apt-get install -y exim4-daemon-light && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    find /var/log -type f | while read f; do echo -ne '' > $f; done;
 
-COPY core/supervisord.conf /etc/supervisord.conf
-COPY core/rsyslog.conf /etc/rsyslog.conf
-COPY core/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh /bin/
+COPY set-exim4-update-conf /bin/
 
-RUN chmod +x /etc/supervisord.conf 
-RUN chmod +x /etc/rsyslog.conf
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN chmod a+x /bin/entrypoint.sh && \
+    chmod a+x /bin/set-exim4-update-conf
 
-ENV HOSTNAME = ""
-ENV RELAY_SMTP_SERVER = ""
-ENV RELAY_SMTP_PORT = ""
-ENV RELAY_SMTP_TLS = false
-ENV RELAY_SMTP_USERNAME = ""
-ENV RELAY_SMTP_PASSWORD = ""
-ENV ALLOWED_NETWORKS = ""
-ENV ALLOWED_SENDER_DOMAINS = ""
-
-EXPOSE 25 587
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+EXPOSE 25
+ENTRYPOINT ["/bin/entrypoint.sh"]
+CMD ["exim", "-bd", "-q15m", "-v"]
