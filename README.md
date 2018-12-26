@@ -2,6 +2,7 @@
 Forked from: https://github.com/namshi/docker-smtp 
 
 This is a SMTP docker container for sending emails. You can also relay emails to gmail and amazon SES.
+See https://github.com/TehesFR/docker-apache-php-prod for a docker-compose usage example.
 
 ## Environment variables
 
